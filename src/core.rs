@@ -68,16 +68,17 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
         }
     } else {
-        for file_or_dir in &files_or_dirs {
-            // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
-            if *file_or_dir == PathBuf::from("-") {
-                Cli::command()
-                    .error(
-                        ErrorKind::ArgumentConflict,
-                        "argument -: not allowed with argument FILE_OR_DIR",
-                    )
-                    .exit();
-            }
+        // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
+        if files_or_dirs
+            .iter()
+            .any(|file_or_dir| *file_or_dir == PathBuf::from("-"))
+        {
+            Cli::command()
+                .error(
+                    ErrorKind::ArgumentConflict,
+                    "argument -: not allowed with argument FILE_OR_DIR",
+                )
+                .exit();
         }
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
         for file_or_dir in &files_or_dirs {
