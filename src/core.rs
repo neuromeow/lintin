@@ -11,6 +11,10 @@ use std::{
 use crate::cli::Cli;
 use crate::util;
 
+fn parse_lines_from_file(_lines_from_file: Vec<String>) {
+    println!("Lines parsed.");
+}
+
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
     let files_to_check = args.file_or_dir;
@@ -26,9 +30,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         } else {
             util::read_lines_from_buf_reader(BufReader::new(File::open(file_to_check).unwrap()))
         };
-        for line in lines_from_file {
-            println!("{}", line);
-        }
+        parse_lines_from_file(lines_from_file);
     } else {
         for file_to_check in &files_to_check {
             if *file_to_check == PathBuf::from("-") {
@@ -46,9 +48,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             let lines_from_file = util::read_lines_from_buf_reader(BufReader::new(
                 File::open(file_to_check.clone()).unwrap(),
             ));
-            for line in lines_from_file {
-                println!("{}", line);
-            }
+            parse_lines_from_file(lines_from_file);
             println!();
         }
     }
