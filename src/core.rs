@@ -1,3 +1,4 @@
+use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser};
 use is_terminal::IsTerminal as _;
 use std::error::Error;
@@ -29,7 +30,27 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             println!("{}", line);
         }
     } else {
-        println!("Several arguments are present.");
+        for file_to_check in &files_to_check {
+            if *file_to_check == PathBuf::from("-") {
+                let mut cmd = Cli::command();
+                cmd.error(
+                    ErrorKind::ArgumentConflict,
+                    "argument -: not allowed with argument FILE_OR_DIR",
+                )
+                .exit();
+            }
+        }
+        // If everything is fine with the arguments
+        for file_to_check in files_to_check {
+            println!("{:?}", file_to_check);
+            let lines_from_file = util::read_lines_from_buf_reader(BufReader::new(
+                File::open(file_to_check.clone()).unwrap(),
+            ));
+            for line in lines_from_file {
+                println!("{}", line);
+            }
+            println!();
+        }
     }
     Ok(())
 }
