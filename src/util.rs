@@ -10,6 +10,6 @@ pub fn create_file_bufreader(file_pathname: &PathBuf) -> Result<BufReader<File>,
     Ok(file_bufreader)
 }
 
-pub fn read_lines_from_buf_reader<R: BufRead>(buf_reader: R) -> Vec<String> {
-    buf_reader.lines().map(|line| line.unwrap()).collect()
+pub fn read_lines_from_bufreader<R: BufRead>(bufreader: R) -> Vec<String> {
+    bufreader.lines().map(|line| line.unwrap()).collect()
 }
