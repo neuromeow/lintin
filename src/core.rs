@@ -2,6 +2,7 @@ use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser};
 use is_terminal::IsTerminal as _;
 use std::error::Error;
+// use std::path::Path;
 use std::{
     fs::File,
     io::{stdin, BufReader},
@@ -13,6 +14,27 @@ use crate::util;
 
 fn parse_lines_from_file(_lines_from_file: Vec<String>) {
     println!("Lines parsed.");
+}
+
+#[allow(dead_code)]
+fn walk_to_find_files(
+    file_or_dir_pathname: &PathBuf,
+    files_to_check: &mut Vec<PathBuf>,
+) -> Result<(), Box<dyn Error>> {
+    if file_or_dir_pathname.is_dir() {
+        for entry in std::fs::read_dir(file_or_dir_pathname)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                walk_to_find_files(&path, files_to_check)?;
+            } else {
+                files_to_check.push(path);
+            }
+        }
+    } else {
+        files_to_check.push(file_or_dir_pathname.clone());
+    }
+    Ok(())
 }
 
 pub fn run() -> Result<(), Box<dyn Error>> {
