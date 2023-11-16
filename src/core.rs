@@ -12,42 +12,31 @@ use crate::util;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
+    // Paths to existing files or directories are expected to be passed as arguments.
     // The arguments passed may also include `-` to attempt to read lines from standard input.
-    let files_or_dirs = args.file_or_dir;
+    let pathnames = args.file_or_dir;
+    // The first condition handles a scenario where only one `-` argument is passed to attempt to read lines from standard input.
     // Possible scenario that the argument list is empty (the number of arguments is 0) is checked by `clap`.
-    if files_or_dirs.len() == 1 {
-        // There can also be only one `-` argument to attempt to read lines from standard input.
-        // `unwrap` never returns `panic` due to the success of the condition above.
-        let file_or_dir = files_or_dirs.get(0).unwrap();
-        if *file_or_dir == PathBuf::from("-") {
-            // It requires that stdin is not interactive because we’re expecting input
-            // that’s piped through to the program, not text that’s typed in at runtime.
-            // If stdin is a tty, it outputs the help docs so that it’s clear why it doesn't work.
-            if stdin().is_terminal() {
-                // `unwrap` will never return `panic` because `clap` works with the help message itself.
-                Cli::command().print_help().unwrap();
-                std::process::exit(2);
-            }
-            println!("stdin");
-            let lines = util::read_lines_from_bufreader(BufReader::new(stdin().lock()));
-            util::parse_lines(lines);
-            println!();
-        } else {
-            let mut file_pathnames: Vec<PathBuf> = Vec::new();
-            util::walk_to_find_file_pathnames(file_or_dir, &mut file_pathnames)?;
-            for file_pathname in file_pathnames {
-                println!("{}", file_pathname.display());
-                let file_bufreader = util::create_file_bufreader(&file_pathname)?;
-                let lines = util::read_lines_from_bufreader(file_bufreader);
-                util::parse_lines(lines);
-                println!();
-            }
+    // `unwrap` never returns `panic` because the scenario described above is always respected.
+    if pathnames.len() == 1 && *pathnames.get(0).unwrap() == PathBuf::from("-") {
+        // It requires that stdin is not interactive because we’re expecting input
+        // that’s piped through to the program, not text that’s typed in at runtime.
+        // If stdin is a tty, it outputs the help docs so that it’s clear why it doesn't work.
+        if stdin().is_terminal() {
+            // `unwrap` never returns `panic` because `clap` itself works with a help message.
+            Cli::command().print_help().unwrap();
+            std::process::exit(2);
         }
+        println!("stdin");
+        let stdin_bufreader = BufReader::new(stdin().lock());
+        let lines = util::read_lines_from_bufreader(stdin_bufreader);
+        util::parse_lines(lines);
+        println!();
     } else {
         // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
-        if files_or_dirs
+        if pathnames
             .iter()
-            .any(|file_or_dir| *file_or_dir == PathBuf::from("-"))
+            .any(|pathname| *pathname == PathBuf::from("-"))
         {
             Cli::command()
                 .error(
@@ -57,11 +46,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 .exit();
         }
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        for file_or_dir in &files_or_dirs {
-            util::walk_to_find_file_pathnames(file_or_dir, &mut file_pathnames)?;
+        // The number of arguments can be one or more for the current conditional branch.
+        // The processing is the same in both cases.
+        for pathname in &pathnames {
+            util::walk_to_find_file_pathnames(pathname, &mut file_pathnames)?;
         }
         for file_pathname in file_pathnames {
             println!("{}", file_pathname.display());
+            // All errors when trying to access a file are propagated.
             let file_bufreader = util::create_file_bufreader(&file_pathname)?;
             let lines = util::read_lines_from_bufreader(file_bufreader);
             util::parse_lines(lines);
