@@ -45,11 +45,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 )
                 .exit();
         }
+        // A list of all paths to all files passed in arguments and files contained in directory paths passed in arguments.
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
         // The number of arguments can be one or more for the current conditional branch.
         // The processing is the same in both cases.
         for pathname in &pathnames {
-            util::walk_to_find_file_pathnames(pathname, &mut file_pathnames)?;
+            util::walk_to_find_and_update_file_pathnames(pathname, &mut file_pathnames)?;
         }
         for file_pathname in file_pathnames {
             println!("{}", file_pathname.display());
