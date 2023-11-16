@@ -10,30 +10,6 @@ use std::{
 use crate::cli::Cli;
 use crate::util;
 
-fn parse_lines(_lines: Vec<String>) {
-    println!("Lines parsed.");
-}
-
-fn walk_to_find_file_pathnames(
-    file_or_dir: &PathBuf,
-    file_pathnames: &mut Vec<PathBuf>,
-) -> Result<(), Box<dyn Error>> {
-    if file_or_dir.is_dir() {
-        for entry in std::fs::read_dir(file_or_dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                walk_to_find_file_pathnames(&path, file_pathnames)?;
-            } else {
-                file_pathnames.push(path);
-            }
-        }
-    } else {
-        file_pathnames.push(file_or_dir.clone());
-    }
-    Ok(())
-}
-
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
     // The arguments passed may also include `-` to attempt to read lines from standard input.
@@ -54,16 +30,16 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
             println!("stdin");
             let lines = util::read_lines_from_bufreader(BufReader::new(stdin().lock()));
-            parse_lines(lines);
+            util::parse_lines(lines);
             println!();
         } else {
             let mut file_pathnames: Vec<PathBuf> = Vec::new();
-            walk_to_find_file_pathnames(file_or_dir, &mut file_pathnames)?;
+            util::walk_to_find_file_pathnames(file_or_dir, &mut file_pathnames)?;
             for file_pathname in file_pathnames {
                 println!("{}", file_pathname.display());
                 let file_bufreader = util::create_file_bufreader(&file_pathname)?;
                 let lines = util::read_lines_from_bufreader(file_bufreader);
-                parse_lines(lines);
+                util::parse_lines(lines);
                 println!();
             }
         }
@@ -82,13 +58,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
         for file_or_dir in &files_or_dirs {
-            walk_to_find_file_pathnames(file_or_dir, &mut file_pathnames)?;
+            util::walk_to_find_file_pathnames(file_or_dir, &mut file_pathnames)?;
         }
         for file_pathname in file_pathnames {
             println!("{}", file_pathname.display());
             let file_bufreader = util::create_file_bufreader(&file_pathname)?;
             let lines = util::read_lines_from_bufreader(file_bufreader);
-            parse_lines(lines);
+            util::parse_lines(lines);
             println!()
         }
     }
