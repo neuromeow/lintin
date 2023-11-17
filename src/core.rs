@@ -2,13 +2,25 @@ use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser};
 use is_terminal::IsTerminal as _;
 use std::error::Error;
+use std::fs::File;
 use std::{
     io::{self, BufReader},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use crate::cli::Cli;
 use crate::util;
+
+fn validate_file_inventory(file_bufreader: BufReader<File>, file_pathname: &Path) {
+    let found_errors = util::validate_inventory(file_bufreader);
+    if !found_errors.is_empty() {
+        println!("{}", file_pathname.display());
+        for error in found_errors {
+            println!("{}", error);
+        }
+        println!();
+    }
+}
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
@@ -52,21 +64,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         // A list of all paths to all files passed in arguments and files contained in directory paths passed in arguments.
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
         // The number of arguments can be one or more for the current conditional branch.
-        // The processing is the same in both cases.
+        // The validating is the same in both cases.
         for pathname in &pathnames {
             util::walk_to_find_and_update_file_pathnames(pathname, &mut file_pathnames)?;
         }
         for file_pathname in file_pathnames {
             // All errors when trying to access a file are propagated.
             let file_bufreader = util::create_file_bufreader(&file_pathname)?;
-            let found_errors = util::validate_inventory(file_bufreader);
-            if !found_errors.is_empty() {
-                println!("{}", file_pathname.display());
-                for error in found_errors {
-                    println!("{}", error);
-                }
-                println!();
-            }
+            validate_file_inventory(file_bufreader, &file_pathname);
         }
     }
     Ok(())
