@@ -8,10 +8,10 @@ use std::{
 };
 
 use crate::cli::Cli;
-use crate::util;
+use crate::file_utilities;
 
 fn validate_inventory_and_print_result<R: BufRead>(reader: R, source: Option<&Path>) {
-    let validation_errors = util::validate_inventory(reader);
+    let validation_errors = file_utilities::validate_inventory(reader);
     if !validation_errors.is_empty() {
         match source {
             Some(path) => println!("{}", path.display()),
@@ -61,11 +61,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         // The number of arguments can be one or more for the current conditional branch.
         // The validating is the same in both cases.
         for pathname in &pathnames {
-            util::walk_to_find_and_update_file_pathnames(pathname, &mut file_pathnames)?;
+            file_utilities::walk_to_find_and_update_file_pathnames(pathname, &mut file_pathnames)?;
         }
         for file_pathname in file_pathnames {
             // All errors when trying to access a file are propagated.
-            let file_bufreader = util::create_file_bufreader(&file_pathname)?;
+            let file_bufreader = file_utilities::create_file_bufreader(&file_pathname)?;
             validate_inventory_and_print_result(file_bufreader, Some(&file_pathname));
         }
     }
