@@ -3,7 +3,7 @@ use clap::{CommandFactory, Parser};
 use is_terminal::IsTerminal as _;
 use std::error::Error;
 use std::{
-    io::{stdin, BufReader},
+    io::{self, BufReader},
     path::PathBuf,
 };
 
@@ -22,13 +22,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         // It requires that stdin is not interactive because we’re expecting input
         // that’s piped through to the program, not text that’s typed in at runtime.
         // If stdin is a tty, it outputs the help docs so that it’s clear why it doesn't work.
-        if stdin().is_terminal() {
+        if io::stdin().is_terminal() {
             // `unwrap` never returns `panic` because `clap` itself works with a help message.
             Cli::command().print_help().unwrap();
             std::process::exit(2);
         }
         println!("stdin");
-        let stdin_bufreader = BufReader::new(stdin().lock());
+        let stdin_bufreader = BufReader::new(io::stdin().lock());
         let lines = util::read_lines_from_bufreader(stdin_bufreader);
         util::parse_lines(lines);
         println!();
