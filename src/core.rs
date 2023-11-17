@@ -2,31 +2,22 @@ use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser};
 use is_terminal::IsTerminal as _;
 use std::error::Error;
-use std::fs::File;
 use std::{
-    io::{self, BufReader, StdinLock},
+    io::{self, BufRead, BufReader},
     path::{Path, PathBuf},
 };
 
 use crate::cli::Cli;
 use crate::util;
 
-fn validate_stdin_inventory(stdin_bufreader: BufReader<StdinLock>) {
-    let found_errors = util::validate_inventory(stdin_bufreader);
-    if !found_errors.is_empty() {
-        println!("stdin");
-        for error in found_errors {
-            println!("{}", error);
+fn validate_inventory_and_print_result<R: BufRead>(reader: R, source: Option<&Path>) {
+    let validation_errors = util::validate_inventory(reader);
+    if !validation_errors.is_empty() {
+        match source {
+            Some(path) => println!("{}", path.display()),
+            None => println!("stdin"),
         }
-        println!();
-    }
-}
-
-fn validate_file_inventory(file_bufreader: BufReader<File>, file_pathname: &Path) {
-    let found_errors = util::validate_inventory(file_bufreader);
-    if !found_errors.is_empty() {
-        println!("{}", file_pathname.display());
-        for error in found_errors {
+        for error in validation_errors {
             println!("{}", error);
         }
         println!();
@@ -51,7 +42,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             std::process::exit(2);
         }
         let stdin_bufreader = BufReader::new(io::stdin().lock());
-        validate_stdin_inventory(stdin_bufreader);
+        validate_inventory_and_print_result(stdin_bufreader, None);
     } else {
         // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
         if pathnames
@@ -75,7 +66,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         for file_pathname in file_pathnames {
             // All errors when trying to access a file are propagated.
             let file_bufreader = util::create_file_bufreader(&file_pathname)?;
-            validate_file_inventory(file_bufreader, &file_pathname);
+            validate_inventory_and_print_result(file_bufreader, Some(&file_pathname));
         }
     }
     Ok(())
