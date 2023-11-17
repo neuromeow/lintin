@@ -1,10 +1,11 @@
 mod cli;
 mod core;
-mod util;
+mod file_utilities;
+mod inventory_validator;
 
 fn main() {
     if let Err(error) = core::run() {
-        println!("{}", error);
+        eprintln!("{}", error);
         std::process::exit(1);
     }
 }
