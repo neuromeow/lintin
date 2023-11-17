@@ -9,9 +9,10 @@ use std::{
 
 use crate::cli::Cli;
 use crate::file_utilities;
+use crate::inventory_validator;
 
 fn validate_inventory_and_print_result<R: BufRead>(reader: R, source: Option<&Path>) {
-    let validation_errors = file_utilities::validate_inventory(reader);
+    let validation_errors = inventory_validator::validate_inventory(reader);
     if !validation_errors.is_empty() {
         match source {
             Some(path) => println!("{}", path.display()),
