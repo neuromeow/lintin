@@ -4,12 +4,23 @@ use is_terminal::IsTerminal as _;
 use std::error::Error;
 use std::fs::File;
 use std::{
-    io::{self, BufReader},
+    io::{self, BufReader, StdinLock},
     path::{Path, PathBuf},
 };
 
 use crate::cli::Cli;
 use crate::util;
+
+fn validate_stdin_inventory(stdin_bufreader: BufReader<StdinLock>) {
+    let found_errors = util::validate_inventory(stdin_bufreader);
+    if !found_errors.is_empty() {
+        println!("stdin");
+        for error in found_errors {
+            println!("{}", error);
+        }
+        println!();
+    }
+}
 
 fn validate_file_inventory(file_bufreader: BufReader<File>, file_pathname: &Path) {
     let found_errors = util::validate_inventory(file_bufreader);
@@ -40,14 +51,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             std::process::exit(2);
         }
         let stdin_bufreader = BufReader::new(io::stdin().lock());
-        let found_errors = util::validate_inventory(stdin_bufreader);
-        if !found_errors.is_empty() {
-            println!("stdin");
-            for error in found_errors {
-                println!("{}", error);
-            }
-            println!();
-        }
+        validate_stdin_inventory(stdin_bufreader);
     } else {
         // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
         if pathnames
