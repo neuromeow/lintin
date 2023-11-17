@@ -27,11 +27,15 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             Cli::command().print_help().unwrap();
             std::process::exit(2);
         }
-        println!("stdin");
         let stdin_bufreader = BufReader::new(io::stdin().lock());
-        let lines = util::read_lines_from_bufreader(stdin_bufreader);
-        util::parse_lines(lines);
-        println!();
+        let found_errors = util::validate_inventory(stdin_bufreader);
+        if !found_errors.is_empty() {
+            println!("stdin");
+            for error in found_errors {
+                println!("{}", error);
+            }
+            println!();
+        }
     } else {
         // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
         if pathnames
@@ -53,12 +57,16 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             util::walk_to_find_and_update_file_pathnames(pathname, &mut file_pathnames)?;
         }
         for file_pathname in file_pathnames {
-            println!("{}", file_pathname.display());
             // All errors when trying to access a file are propagated.
             let file_bufreader = util::create_file_bufreader(&file_pathname)?;
-            let lines = util::read_lines_from_bufreader(file_bufreader);
-            util::parse_lines(lines);
-            println!()
+            let found_errors = util::validate_inventory(file_bufreader);
+            if !found_errors.is_empty() {
+                println!("{}", file_pathname.display());
+                for error in found_errors {
+                    println!("{}", error);
+                }
+                println!();
+            }
         }
     }
     Ok(())
