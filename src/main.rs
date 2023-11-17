@@ -2,9 +2,11 @@ mod cli;
 mod core;
 mod util;
 
+const EXIT_CODE_ERROR: i32 = 1;
+
 fn main() {
     if let Err(error) = core::run() {
-        println!("{}", error);
-        std::process::exit(1);
+        eprintln!("{}", error);
+        std::process::exit(EXIT_CODE_ERROR);
     }
 }
