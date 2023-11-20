@@ -8,3 +8,14 @@ pub struct Cli {
     /// The path to the file to check, use - to read from stdin (must not be a tty)
     pub file_or_dir: Vec<PathBuf>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_cli() {
+        use clap::CommandFactory;
+        Cli::command().debug_assert()
+    }
+}

@@ -28,3 +28,76 @@ pub fn create_file_bufreader(file_pathname: &PathBuf) -> Result<BufReader<File>,
     let file_bufreader = BufReader::new(file);
     Ok(file_bufreader)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::{NamedTempFile, TempDir};
+
+    #[test]
+    fn test_walk_to_find_and_update_file_pathnames_single_file() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_path_buf();
+        let mut file_pathnames: Vec<PathBuf> = Vec::new();
+        walk_to_find_and_update_file_pathnames(&temp_file_path, &mut file_pathnames).unwrap();
+        assert_eq!(file_pathnames.len(), 1);
+    }
+
+    #[test]
+    fn test_walk_to_find_and_update_file_pathnames_empty_dir() {
+        let temp_dir = TempDir::new().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let mut file_pathnames: Vec<PathBuf> = Vec::new();
+        walk_to_find_and_update_file_pathnames(&temp_dir_path, &mut file_pathnames).unwrap();
+        assert_eq!(file_pathnames.len(), 0);
+    }
+
+    #[test]
+    fn test_walk_to_find_and_update_file_pathnames_dir_with_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        for i in 0..3 {
+            let temp_file_path = temp_dir_path.join(format!("temp_file_{}", i));
+            File::create(&temp_file_path).unwrap();
+        }
+        let mut file_pathnames: Vec<PathBuf> = Vec::new();
+        walk_to_find_and_update_file_pathnames(&temp_dir_path, &mut file_pathnames).unwrap();
+        assert_eq!(file_pathnames.len(), 3);
+    }
+
+    #[test]
+    fn test_walk_to_find_and_update_file_pathnames_dir_with_subdir_and_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        for i in 0..2 {
+            let temp_file_path = temp_dir_path.join(format!("temp_file_{}", i));
+            File::create(&temp_file_path).unwrap();
+            let temp_subdir_path = temp_dir_path.join(format!("temp-subdir-{}", i));
+            fs::create_dir(&temp_subdir_path).unwrap();
+            for i in 0..3 {
+                let temp_file_path = temp_subdir_path.join(format!("temp_file_{}", i));
+                File::create(&temp_file_path).unwrap();
+            }
+        }
+        let mut file_pathnames: Vec<PathBuf> = Vec::new();
+        walk_to_find_and_update_file_pathnames(&temp_dir_path, &mut file_pathnames).unwrap();
+        assert_eq!(file_pathnames.len(), 8);
+    }
+
+    #[test]
+    fn test_create_file_bufreader_file_exists() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_path_buf();
+        let temp_file_bufreader_result = create_file_bufreader(&temp_file_path);
+        assert!(temp_file_bufreader_result.is_ok());
+    }
+
+    #[test]
+    fn test_create_file_bufreader_file_does_not_exist() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let non_existent_temp_file_path = temp_file.path().join("non_existent");
+        let non_existent_temp_file_bufreader_result =
+            create_file_bufreader(&non_existent_temp_file_path);
+        assert!(non_existent_temp_file_bufreader_result.is_err());
+    }
+}
