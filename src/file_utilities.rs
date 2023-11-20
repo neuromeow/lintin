@@ -83,4 +83,21 @@ mod tests {
         walk_to_find_and_update_file_pathnames(&temp_dir_path, &mut file_pathnames).unwrap();
         assert_eq!(file_pathnames.len(), 8);
     }
+
+    #[test]
+    fn test_create_file_bufreader_file_exists() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_path_buf();
+        let temp_file_bufreader_result = create_file_bufreader(&temp_file_path);
+        assert!(temp_file_bufreader_result.is_ok());
+    }
+
+    #[test]
+    fn test_create_file_bufreader_file_does_not_exist() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let non_existent_temp_file_path = temp_file.path().join("non_existent");
+        let non_existent_temp_file_bufreader_result =
+            create_file_bufreader(&non_existent_temp_file_path);
+        assert!(non_existent_temp_file_bufreader_result.is_err());
+    }
 }
