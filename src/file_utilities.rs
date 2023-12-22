@@ -35,38 +35,39 @@ mod tests {
     use tempfile::{NamedTempFile, TempDir};
 
     #[test]
-    fn test_walk_to_find_and_update_file_pathnames_single_file() {
+    fn test_walk_to_find_and_update_file_paths_list_single_file() {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_path = temp_file.path().to_path_buf();
-        let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_paths_list(&temp_file_path, &mut file_pathnames).unwrap();
-        assert_eq!(file_pathnames.len(), 1);
+        let mut temp_file_paths_list = Vec::new();
+        walk_to_find_and_update_file_paths_list(&temp_file_path, &mut temp_file_paths_list)
+            .unwrap();
+        assert_eq!(temp_file_paths_list.len(), 1);
     }
 
     #[test]
-    fn test_walk_to_find_and_update_file_pathnames_empty_dir() {
+    fn test_walk_to_find_and_update_file_paths_list_empty_dir() {
         let temp_dir = TempDir::new().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
-        let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut file_pathnames).unwrap();
-        assert_eq!(file_pathnames.len(), 0);
+        let mut temp_file_paths_list = Vec::new();
+        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut temp_file_paths_list).unwrap();
+        assert_eq!(temp_file_paths_list.len(), 0);
     }
 
     #[test]
-    fn test_walk_to_find_and_update_file_pathnames_dir_with_files() {
+    fn test_walk_to_find_and_update_file_paths_list_dir_with_files() {
         let temp_dir = TempDir::new().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
         for i in 0..3 {
             let temp_file_path = temp_dir_path.join(format!("temp_file_{}", i));
             File::create(&temp_file_path).unwrap();
         }
-        let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut file_pathnames).unwrap();
-        assert_eq!(file_pathnames.len(), 3);
+        let mut temp_file_paths_list = Vec::new();
+        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut temp_file_paths_list).unwrap();
+        assert_eq!(temp_file_paths_list.len(), 3);
     }
 
     #[test]
-    fn test_walk_to_find_and_update_file_pathnames_dir_with_subdir_and_files() {
+    fn test_walk_to_find_and_update_file_paths_list_dir_with_subdirs_and_files() {
         let temp_dir = TempDir::new().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
         for i in 0..2 {
@@ -79,9 +80,9 @@ mod tests {
                 File::create(&temp_file_path).unwrap();
             }
         }
-        let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut file_pathnames).unwrap();
-        assert_eq!(file_pathnames.len(), 8);
+        let mut temp_file_paths_list = Vec::new();
+        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut temp_file_paths_list).unwrap();
+        assert_eq!(temp_file_paths_list.len(), 8);
     }
 
     #[test]
