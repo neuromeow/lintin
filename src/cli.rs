@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-/// lintin
+/// Command-line tool for linting Ansible inventories
 #[derive(Parser)]
 #[command(arg_required_else_help = true)]
 pub struct Cli {
