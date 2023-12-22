@@ -11,7 +11,11 @@ use crate::cli::Cli;
 use crate::file_utilities;
 use crate::inventory_validator;
 
-fn validate_inventory_and_print_result<R: BufRead>(reader: R, source: Option<&Path>) {
+fn validate_and_print_result<R: BufRead>(reader: R, source: Option<&Path>) {
+    // An Ansible inventory file can be created in one of many formats, depending on the inventory plugins used.
+    // The most common formats are INI and YAML.
+    // Therefore, different functions and validation algorithms should be used for different formats.
+    // Here a kind of virtual function is called that does not take into account such differences.
     let validation_errors = inventory_validator::validate_inventory(reader);
     if !validation_errors.is_empty() {
         match source {
@@ -29,11 +33,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
     // Paths to existing files or directories are expected to be passed as arguments.
     // The arguments passed may also include `-` to attempt to read lines from standard input.
-    let pathnames = args.file_or_dir;
+    let paths = args.file_or_dir;
     // The first condition handles a scenario where only one `-` argument is passed to attempt to read lines from standard input.
     // Possible scenario that the argument list is empty (the number of arguments is 0) is checked by `clap`.
     // `unwrap` never returns `panic` because the scenario described above is always respected.
-    if pathnames.len() == 1 && *pathnames.get(0).unwrap() == PathBuf::from("-") {
+    if paths.len() == 1 && *paths.get(0).unwrap() == PathBuf::from("-") {
         // It requires that stdin is not interactive because we’re expecting input
         // that’s piped through to the program, not text that’s typed in at runtime.
         // If stdin is a tty, it outputs the help docs so that it’s clear why it doesn't work.
@@ -43,13 +47,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             std::process::exit(2);
         }
         let stdin_bufreader = BufReader::new(io::stdin().lock());
-        validate_inventory_and_print_result(stdin_bufreader, None);
+        validate_and_print_result(stdin_bufreader, None);
     } else {
         // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
-        if pathnames
-            .iter()
-            .any(|pathname| *pathname == PathBuf::from("-"))
-        {
+        if paths.iter().any(|path| *path == PathBuf::from("-")) {
             Cli::command()
                 .error(
                     ErrorKind::ArgumentConflict,
@@ -58,16 +59,16 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 .exit();
         }
         // A list of all paths to all files passed in arguments and files contained in directory paths passed in arguments.
-        let mut file_pathnames: Vec<PathBuf> = Vec::new();
+        let mut file_paths_list = Vec::new();
         // The number of arguments can be one or more for the current conditional branch.
         // The validating is the same in both cases.
-        for pathname in &pathnames {
-            file_utilities::walk_to_find_and_update_file_pathnames(pathname, &mut file_pathnames)?;
+        for path in &paths {
+            file_utilities::walk_to_find_and_update_file_paths_list(path, &mut file_paths_list)?;
         }
-        for file_pathname in file_pathnames {
+        for file_path in file_paths_list {
             // All errors when trying to access a file are propagated.
-            let file_bufreader = file_utilities::create_file_bufreader(&file_pathname)?;
-            validate_inventory_and_print_result(file_bufreader, Some(&file_pathname));
+            let file_bufreader = file_utilities::create_file_bufreader(&file_path)?;
+            validate_and_print_result(file_bufreader, Some(&file_path));
         }
     }
     Ok(())
