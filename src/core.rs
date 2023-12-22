@@ -11,7 +11,11 @@ use crate::cli::Cli;
 use crate::file_utilities;
 use crate::inventory_validator;
 
-fn validate_inventory_and_print_result<R: BufRead>(reader: R, source: Option<&Path>) {
+fn validate_and_print_result<R: BufRead>(reader: R, source: Option<&Path>) {
+    // An Ansible inventory file can be created in one of many formats, depending on the inventory plugins used.
+    // The most common formats are INI and YAML.
+    // Therefore, different functions and validation algorithms should be used for different formats.
+    // Here a kind of virtual function is called that does not take into account such differences.
     let validation_errors = inventory_validator::validate_inventory(reader);
     if !validation_errors.is_empty() {
         match source {
@@ -43,7 +47,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             std::process::exit(2);
         }
         let stdin_bufreader = BufReader::new(io::stdin().lock());
-        validate_inventory_and_print_result(stdin_bufreader, None);
+        validate_and_print_result(stdin_bufreader, None);
     } else {
         // The `-` argument to attempt to read lines from standard input must not be allowed along with other arguments.
         if paths.iter().any(|path| *path == PathBuf::from("-")) {
@@ -64,7 +68,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         for file_path in file_paths_list {
             // All errors when trying to access a file are propagated.
             let file_bufreader = file_utilities::create_file_bufreader(&file_path)?;
-            validate_inventory_and_print_result(file_bufreader, Some(&file_path));
+            validate_and_print_result(file_bufreader, Some(&file_path));
         }
     }
     Ok(())
