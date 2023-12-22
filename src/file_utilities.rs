@@ -1,30 +1,30 @@
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::BufReader;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub fn walk_to_find_and_update_file_pathnames(
-    pathname: &PathBuf,
-    file_pathnames: &mut Vec<PathBuf>,
+pub fn walk_to_find_and_update_file_paths_list(
+    path: &PathBuf,
+    file_paths_list: &mut Vec<PathBuf>,
 ) -> Result<(), Box<dyn Error>> {
-    if pathname.is_dir() {
-        for entry_result in fs::read_dir(pathname)? {
+    if path.is_dir() {
+        for entry_result in fs::read_dir(path)? {
             let entry = entry_result?;
-            let entry_pathname = entry.path();
-            if entry_pathname.is_dir() {
-                walk_to_find_and_update_file_pathnames(&entry_pathname, file_pathnames)?;
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                walk_to_find_and_update_file_paths_list(&entry_path, file_paths_list)?;
             } else {
-                file_pathnames.push(entry_pathname);
+                file_paths_list.push(entry_path);
             }
         }
     } else {
-        file_pathnames.push(pathname.clone());
+        file_paths_list.push(path.clone());
     }
     Ok(())
 }
 
-pub fn create_file_bufreader(file_pathname: &PathBuf) -> Result<BufReader<File>, Box<dyn Error>> {
-    let file = File::open(file_pathname)?;
+pub fn create_file_bufreader(file_path: &Path) -> Result<BufReader<File>, Box<dyn Error>> {
+    let file = File::open(file_path)?;
     let file_bufreader = BufReader::new(file);
     Ok(file_bufreader)
 }
@@ -39,7 +39,7 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_path = temp_file.path().to_path_buf();
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_pathnames(&temp_file_path, &mut file_pathnames).unwrap();
+        walk_to_find_and_update_file_paths_list(&temp_file_path, &mut file_pathnames).unwrap();
         assert_eq!(file_pathnames.len(), 1);
     }
 
@@ -48,7 +48,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_pathnames(&temp_dir_path, &mut file_pathnames).unwrap();
+        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut file_pathnames).unwrap();
         assert_eq!(file_pathnames.len(), 0);
     }
 
@@ -61,7 +61,7 @@ mod tests {
             File::create(&temp_file_path).unwrap();
         }
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_pathnames(&temp_dir_path, &mut file_pathnames).unwrap();
+        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut file_pathnames).unwrap();
         assert_eq!(file_pathnames.len(), 3);
     }
 
@@ -80,7 +80,7 @@ mod tests {
             }
         }
         let mut file_pathnames: Vec<PathBuf> = Vec::new();
-        walk_to_find_and_update_file_pathnames(&temp_dir_path, &mut file_pathnames).unwrap();
+        walk_to_find_and_update_file_paths_list(&temp_dir_path, &mut file_pathnames).unwrap();
         assert_eq!(file_pathnames.len(), 8);
     }
 
