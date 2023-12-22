@@ -1,20 +1,19 @@
 use std::io::BufRead;
 
 pub fn validate_inventory<R: BufRead>(reader: R) -> Vec<String> {
-    let mut found_errors = Vec::new();
+    let mut inventory_errors = Vec::new();
     for (index, line) in reader.lines().enumerate() {
         match line {
             Ok(_text) => {
-                // As a stub for future checks. If an error occurs, add its description to `found_errors`.
-                // You can use `index` here which contains the line number.
+                // As a stub for future checks.
+                // And if an error occurs, it's description should also be added to `inventory_errors`.
             }
             Err(err) => {
-                // If there was an error reading a line, add its description along with line number to `found_errors`.
-                found_errors.push(format!("Error reading line {}: {}", index + 1, err));
+                inventory_errors.push(format!("{} Line reading error: {}", index + 1, err));
             }
         }
     }
-    found_errors
+    inventory_errors
 }
 
 #[cfg(test)]
@@ -27,6 +26,7 @@ mod tests {
         let cursor = Cursor::new(b"Valid line\n");
         let found_errors = validate_inventory(cursor);
         assert!(found_errors.is_empty());
+
     }
 
     #[test]
